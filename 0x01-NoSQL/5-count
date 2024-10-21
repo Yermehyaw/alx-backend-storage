@@ -1,0 +1,4 @@
+// No of docs with  aspec field in a collection
+db.school.countDocuments({
+	name: {$eq: "Holberton school"}
+});
