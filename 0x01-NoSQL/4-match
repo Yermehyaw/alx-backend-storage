@@ -1,0 +1,4 @@
+// Find a db with a certain field
+db.school.find({
+	name: {$eq: "Holberton school"}
+});
