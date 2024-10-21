@@ -1,0 +1,4 @@
+// Delete a doc with a soec value in a field
+db.school.deleteMany({
+	name: "Holberton school"
+});
