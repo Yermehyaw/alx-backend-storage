@@ -1,0 +1,4 @@
+// Lists all documents with name starting with Holberton
+db.school.findMany(
+	{ name: { $regex: /^Holberton/ } }
+);
