@@ -2,13 +2,11 @@
 """
 A mini-caching service using redis
 
-Modules Imported: redis, random, uuid
-random: return random values
+Modules Imported: redis, uuid
 redis: redis db operations in py
 uuid: returns unique ids
 
 """
-import random
 import redis
 import uuid
 
@@ -31,4 +29,4 @@ class Cache():
 
         self._redis.set({store_id: data})
 
-        return str(store_id.int)
+        return str(store_id)
