@@ -12,6 +12,7 @@ import redis
 import uuid
 from typing import Union
 
+
 class Cache():
     """
     A Cache for a mini-store app
