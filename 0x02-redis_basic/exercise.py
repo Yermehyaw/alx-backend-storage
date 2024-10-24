@@ -10,6 +10,7 @@ uuid: returns unique ids
 """
 import redis
 import uuid
+from typing import Callable
 from typing import Union
 
 
@@ -33,3 +34,14 @@ class Cache():
         self._redis.set(store_id, data)
 
         return store_id
+
+    def get(key: str, fn: Callable[]) -> :
+        """Custom return of value of a specified key from redis client"""
+        # Check if key exists
+        value = self._redis.get(key)
+
+        if value:
+            # custom behaviour
+
+        else:
+            # default behaviour    
