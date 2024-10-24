@@ -35,13 +35,27 @@ class Cache():
 
         return store_id
 
-    def get(key: str, fn: Callable[]) -> :
-        """Custom return of value of a specified key from redis client"""
+    def get(self, key: str, fn: Callable[[], None]) -> Union[None, ]:
+        """
+        Custom deserialiization of response
+        value from a redis client
+        """
+        if fn or isinstance(fn, str):
+            return None
+
         # Check if key exists
         value = self._redis.get(key)
 
-        if value:
+        if value:  # key exists
             # custom behaviour
+            return fn(value)  # deserialized by callback func
 
-        else:
-            # default behaviour    
+        return None  # default behaviour if key is not in db
+
+    def get_str(self, key: str) -> str:
+        """Decode responses for str values"""
+        return self._redis.get(key).decode('utf-8')
+
+    def get_int(self, key:str) -> int:
+        """Decode responses for int values"""
+        return self._redis.get(key).decode('utf-8')
