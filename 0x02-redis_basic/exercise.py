@@ -23,7 +23,7 @@ class Cache():
     """
     def __init__(self):
         """Object initializer"""
-        self._redis: redis.client.Redis = redis.Redis()
+        self._redis = redis.Redis()
         self._redis.flushdb()
 
     def store(self, data: Union[str, bytes, int, float]) -> str:
