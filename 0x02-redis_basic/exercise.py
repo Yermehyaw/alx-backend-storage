@@ -27,16 +27,36 @@ def count_calls(method: Callable[[C, Any], R]) -> Callable[[C, Any], R]:
     """Counts the number of times a method is called"""
 
     @wraps(method)
-    def wrapper(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> R:
+    def wrapper(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> str:
         """Wrapper func"""
-        # access the redis client and:
         client = self._redis
-        # create a count key: the __qualname__ dunder method, with a value of 0
-        client.set(method.__qualname__, 0)
-        # call the incr method
+        # create a count key with __qualname__ with an initial value of 0
         client.incr(method.__qualname__)
+        method_result = func(*args, **kwargs)  # call the func/method to be wrapped
+
+        return method_result
 
     return wrapper
+
+def call_history(method: Callable[[C, Any], R]) -> Callable[[C, Any], R]:
+    """Stores history of inputs and outputs of a method"""
+
+    @wraps(method)
+    def wrapper(self, *args, **kwargs) -> str:
+        client = self._redis
+
+        # Create a redis db list of inputs to the method
+        client.rpush(method.__qualname__ + ':inputs', str(args))  # args to be saved a list of str rep of a list
+
+        method_result = func(*args, **kwargs)
+
+        # Create a redisdb list of output from method
+        client.rpush(method.__qualname__ + ':outputs', method_result)
+
+        return method_result  # return the expected return val of the decorated mthd
+
+    return wrapper
+        
         
     
 
@@ -52,7 +72,8 @@ class Cache():
         """Object initializer"""
         self._redis = redis.Redis()
         self._redis.flushdb()
-     
+
+    @call_history
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """Adds new store data to redis db"""
