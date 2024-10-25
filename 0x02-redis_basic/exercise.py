@@ -23,8 +23,8 @@ C = TypeVar('C', bound='Cache')
 R = TypeVar('R')
 
 
-def count_calls(method: Callable[[C, Any], R]) -> Callable[[C, Any], R]:
-    """Counts the number of times a method is called"""
+def count_calls(method: Callable[[Union[str, bytes, int, float]], str]) -> Callable[[Any], str]:
+    """Decorator to count the number of times a method is called"""
 
     @wraps(method)
     def wrapper(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> str:
@@ -32,33 +32,45 @@ def count_calls(method: Callable[[C, Any], R]) -> Callable[[C, Any], R]:
         client = self._redis
         # create a count key with __qualname__ with an initial value of 0
         client.incr(method.__qualname__)
-        method_result = func(*args, **kwargs)  # call the func/method to be wrapped
 
-        return method_result
+        return method(self, *args, **kwargs)  # call and return from the method to be wrapped
 
     return wrapper
 
 def call_history(method: Callable[[C, Any], R]) -> Callable[[C, Any], R]:
-    """Stores history of inputs and outputs of a method"""
+    """Decorates a method to store the history of its inputs and outputs"""
 
     @wraps(method)
     def wrapper(self, *args, **kwargs) -> str:
+        """Wrapper to implemnt the decorator logic"""
         client = self._redis
 
-        # Create a redis db list of inputs to the method
-        client.rpush(method.__qualname__ + ':inputs', str(args))  # args to be saved a list of str rep of a list
+        return method(self, *args, **kwargs)  # return the expected return val of the decorated mthd
 
-        method_result = func(*args, **kwargs)
+        # Create a redis db list of inputs to the method
+        client.rpush(method.__qualname__ + ':inputs', str(*args))  # arg is a list 
 
         # Create a redisdb list of output from method
         client.rpush(method.__qualname__ + ':outputs', method_result)
 
-        return method_result  # return the expected return val of the decorated mthd
-
     return wrapper
-        
-        
+
+
+def replay(method: Callable[[C, Any], R]) -> None:
+    """Displays the history of calls of a particular function"""
+
+    instance = method.__self__  # access the instance which the method was called from
+    client = instance._redis
     
+    input_history = list(client.lrange(method.__qualname__ + ':inputs', 0, -1))  # retrieve the entire list from 0 to -1(end idx)
+    output_history = list(client.lrange(method.__qualname__ + ':outputs'))  # equiv to previous lrange() call
+    no_calls = int(client.get(method.__qualname__))
+
+    # Display format
+    print(f'Cache.store was called {no_calls} times')  # decorator is for store() mthd
+    for arg, ret in zip(input_history, output_history):
+        print("Cache.store(*('{arg}',)) -> {ret}")
+
 
 class Cache():
     """
@@ -83,7 +95,7 @@ class Cache():
 
         return store_id
 
-    def get(self, key: str, fn: Callable[[], None]=None) -> Union[None, ]:
+    def get(self, key: str, fn: Callable[[], None]=None) -> Union[bytes, None]:
         """
         Custom deserialiization of response
         value from a redis client
