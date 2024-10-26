@@ -61,13 +61,13 @@ def replay(method: Callable) -> None:
     print(type(mthd_name))
 
     input_history = list(client.lrange(method.__qualname__ + ':inputs', 0, -1))
-    output_history = list(client.lrange(method.__qualname__ + ':outputs'))
+    output_history = list(client.lrange(method.__qualname__ + ':outputs', 0, -1))
     no_calls = int(client.get(method.__qualname__))
 
     # Display format
-    print(f'Cache.store was called {no_calls} times')
+    print(f'Cache.store was called {no_calls} times:')
     for arg, ret in zip(input_history, output_history):
-        print("Cache.store(*({arg})) -> {ret}")
+        print(f"Cache.store(*({arg})) -> {ret}")
 
 
 class Cache():
