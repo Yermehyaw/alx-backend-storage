@@ -28,11 +28,9 @@ def count_calls(method: Callable) -> Callable:
     """Decorator to count the number of times a method is called"""
 
     @wraps(method)
-    def wrapper(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> str:
+    def wrapper(self, *args, **kwargs) -> str:
         """Wrapper func"""
-        client = self._redis
-        # create a count key with __qualname__ with an initial value of 0
-        client.incr(method.__qualname__)
+        self._redis.incr(method.__qualname__)
 
         return method(self, *args, **kwargs)  # execute methd and ret val
 
@@ -55,6 +53,9 @@ def call_history(method: Callable[[C, Any], R]) -> Callable[[C, Any], R]:
         # Create a redisdb list of output from method
         client.rpush(method.__qualname__ + ':outputs', method_result)
 
+        input_history = (client.lrange(method.__qualname__ + ':inputs', 0, -1))
+        print(type(input_history))
+
     return wrapper
 
 
@@ -63,6 +64,8 @@ def replay(method: Callable[[C, Any], R]) -> None:
 
     instance = method.__self__  # access the method's instance
     client = instance._redis
+    mthd_name = method.__qualname__  # qualified name
+    print(type(mthd_name))
 
     input_history = list(client.lrange(method.__qualname__ + ':inputs', 0, -1))
     output_history = list(client.lrange(method.__qualname__ + ':outputs'))
@@ -87,8 +90,8 @@ class Cache():
         self._redis = redis.Redis()
         self._redis.flushdb()
 
-    @call_history
     @count_calls
+    @call_history
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """Adds new store data to redis db"""
         store_id = str(uuid.uuid4())
