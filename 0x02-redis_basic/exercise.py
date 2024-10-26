@@ -37,24 +37,19 @@ def count_calls(method: Callable) -> Callable:
     return wrapper
 
 
-def call_history(method: Callable[[C, Any], R]) -> Callable[[C, Any], R]:
+def call_history(method: Callable) -> Callable:
     """Decorates a method to store the history of its inputs and outputs"""
 
     @wraps(method)
     def wrapper(self, *args, **kwargs) -> str:
         """Wrapper to implemnt the decorator logic"""
-        client = self._redis
-
         return method(self, *args, **kwargs)  # return val of decorated mthd
 
-        # Create a redis db list of inputs to the method
-        client.rpush(method.__qualname__ + ':inputs', str(*args))
+        # Create a redis list of inputs to the method
+        self._redis.rpush(method.__qualname__ + ':inputs', str(*args))
 
         # Create a redisdb list of output from method
-        client.rpush(method.__qualname__ + ':outputs', method_result)
-
-        input_history = (client.lrange(method.__qualname__ + ':inputs', 0, -1))
-        print(type(input_history))
+        self._redis.rpush(method.__qualname__ + ':outputs', method_result)
 
     return wrapper
 
