@@ -39,10 +39,10 @@ def call_history(method: Callable) -> Callable:
     @wraps(method)
     def wrapper(self, *args, **kwargs) -> str:
         """Wrapper to implemnt the decorator logic"""
-        method_result = method(self, *args, **kwargs)
-
         # Create a redis list of inputs to the method
         self._redis.rpush(method.__qualname__ + ':inputs', str(args))
+
+        method_result = method(self, *args, **kwargs)
 
         # Create a redisdb list of output from method
         self._redis.rpush(method.__qualname__ + ':outputs', method_result)
@@ -52,7 +52,7 @@ def call_history(method: Callable) -> Callable:
     return wrapper
 
 
-def replay(method: Callable[[C, Any], R]) -> None:
+def replay(method: Callable) -> None:
     """Displays the history of calls of a particular function"""
 
     instance = method.__self__  # access the method's instance
