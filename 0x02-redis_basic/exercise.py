@@ -20,10 +20,6 @@ from typing import TypeVar
 from typing import Dict
 
 
-C = TypeVar('C', bound='Cache')
-R = TypeVar('R')
-
-
 def count_calls(method: Callable) -> Callable:
     """Decorator to count the number of times a method is called"""
 
@@ -43,13 +39,15 @@ def call_history(method: Callable) -> Callable:
     @wraps(method)
     def wrapper(self, *args, **kwargs) -> str:
         """Wrapper to implemnt the decorator logic"""
-        return method(self, *args, **kwargs)  # return val of decorated mthd
+        method_result = method(self, *args, **kwargs)
 
         # Create a redis list of inputs to the method
-        self._redis.rpush(method.__qualname__ + ':inputs', str(*args))
+        self._redis.rpush(method.__qualname__ + ':inputs', str(args))
 
         # Create a redisdb list of output from method
         self._redis.rpush(method.__qualname__ + ':outputs', method_result)
+
+        return method_result
 
     return wrapper
 
@@ -69,7 +67,7 @@ def replay(method: Callable[[C, Any], R]) -> None:
     # Display format
     print(f'Cache.store was called {no_calls} times')
     for arg, ret in zip(input_history, output_history):
-        print("Cache.store(*('{arg}',)) -> {ret}")
+        print("Cache.store(*({arg})) -> {ret}")
 
 
 class Cache():
